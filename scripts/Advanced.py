@@ -17,38 +17,6 @@ class Room:
         self.x2 = x2
         self.y2 = y2
 
-class CliffSensor:
-    def __init__(self):
-        self.left = False
-        self.left_front = False
-        self.right = False
-        self.right_front = False
-
-class Create3(Create3): # Modified Create3 Package
-    def __init__(self, backend):
-        super().__init__(backend)
-
-        self.cliff_sensor = CliffSensor()
-
-    def when_cliff_sensor(self, condition: list[bool, bool, bool, bool], callback: Callable[[bool], Awaitable[None]]):
-        """Register when cliff callback of type: async def fn(over_cliff: bool)."""
-        self._when_cliff_sensor.append(Event(condition, callback))
-
-    async def _when_cliff_sensor_handler(self, packet):
-        self.cliff_sensor.disable_motors = packet.payload[4] != 0
-        for event in self._when_cliff_sensor:
-            self.cliff_sensor.right = packet.payload[4] & 0x01 != 0
-            self.cliff_sensor.right_front = packet.payload[4] & 0x02 != 0
-            self.cliff_sensor.left_front = packet.payload[4] & 0x04 != 0
-            self.cliff_sensor.left = packet.payload[4] & 0x08 != 0
-            
-            # An empty condition list means to trigger the event on every occurrence.
-            if not event.condition and (self.cliff_sensor.left or self.cliff_sensor.left_front or self.cliff_sensor.right_front or self.cliff_sensor.right):  # Any.
-                await event.run(self)
-                continue
-            if len(event.condition) > 1 and ((event.condition[0] == self.cliff_sensor.left) and (event.condition[1] == self.cliff_sensor.left_front) and (event.condition[2] == self.cliff_sensor.right_front) and (event.condition[3] == self.cliff_sensor.right)):
-                await event.run(self)
-
 robot = Create3(Bluetooth())
 nav_robot = robot
 
